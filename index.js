@@ -38,9 +38,9 @@ app.get('/user', function (req, res) {
 })
 
 // toute permettant de récupérer tous les clients
-app.get('/customers/:tri', function (req, res) {
+app.get('/customers/:tri?', function (req, res) {
 	var json = '';
-  con.query("SELECT * FROM customer ORDER BY "+req.params.tri, function (err, result, fields) {
+  con.query(`SELECT * FROM customer WHERE contact LIKE '%${req.query.q}%' ORDER BY ${req.params.tri}`, function (err, result, fields) {
     if (err) throw err;
 	json = JSON.stringify(result);
 	res.send(json);
@@ -50,7 +50,7 @@ app.get('/customers/:tri', function (req, res) {
 // route permettant d'obtenir toutes les demandes d'un client à partir de son siret
 app.get('/getCustomerProposal/:siret', function (req, res) {
 	var json = '';
-  con.query("SELECT * FROM proposal WHERE idCustomer="+ req.params.siret, function (err, result, fields) {
+  con.query(`SELECT * FROM proposal WHERE idCustomer=${req.params.siret} `, function (err, result, fields) {
     if (err) throw err;
 	json = JSON.stringify(result);
 	res.send(json);
@@ -95,7 +95,7 @@ app.get('/getProposals/:id/:tri', function (req, res) {
     });
 })
 
-// route permettant de rechercher les lignes en fonction de la company du customer et du titre du proposal
+// route permettant de rechercher les lignes en fonction de la company du cstomer et du titre du proposal
 app.get('/research/:word', function (req, res) {
 	var json = '';
   con.query(`SELECT c.company, d.directorMail, p.* FROM customer c, proposal p, operationsdirector d WHERE c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%`+req.params.word+`%' OR p.proposalTitle like '%`+req.params.word+`%'`, function (err, result, fields) {
@@ -105,7 +105,7 @@ app.get('/research/:word', function (req, res) {
   });
 })
 
-// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié, on peut filtrer par company
+// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié et filtrable ar company
 app.get('/getProposal/:id/:tri?', function (req, res) {
   var json = '';
   if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
