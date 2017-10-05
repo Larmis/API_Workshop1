@@ -80,7 +80,7 @@ app.post('/updateProposal', function (req, res) {
   });
 })
 
-// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié par date
+// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié
 app.get('/getProposals/:id/:tri', function (req, res) {
   var json = '';
   if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
@@ -95,7 +95,7 @@ app.get('/getProposals/:id/:tri', function (req, res) {
     });
 })
 
-// route permettant de rechercher les lignes en fonction de la company du cstomer et du titre du proposal
+// route permettant de rechercher les lignes en fonction de la company du customer et du titre du proposal
 app.get('/research/:word', function (req, res) {
 	var json = '';
   con.query(`SELECT c.company, d.directorMail, p.* FROM customer c, proposal p, operationsdirector d WHERE c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%`+req.params.word+`%' OR p.proposalTitle like '%`+req.params.word+`%'`, function (err, result, fields) {
@@ -105,13 +105,13 @@ app.get('/research/:word', function (req, res) {
   });
 })
 
-// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié par date
+// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié, on peut filtrer par company
 app.get('/getProposal/:id/:tri?', function (req, res) {
   var json = '';
   if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
     res.send(json);
   }else {
-		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' OR p.proposalTitle like '%${req.query.q}%' GROUP BY idProposal ORDER BY ${req.params.tri}` + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC");
+		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' GROUP BY idProposal ORDER BY ${req.params.tri}` + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC");
     con.query(request, function (err, result, fields) {
       if (err) throw err;
     json = JSON.stringify(result);
