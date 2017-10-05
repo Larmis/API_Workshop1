@@ -1,0 +1,3 @@
+[submodule "public/GFI-Front-End"]
+	path = public/GFI-Front-End
+	url = https://github.com/RikuBtw/GFI-Front-End.git
