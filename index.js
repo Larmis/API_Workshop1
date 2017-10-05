@@ -111,7 +111,7 @@ app.get('/getProposal/:id/:tri?', function (req, res) {
   if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
     res.send(json);
   }else {
-		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' GROUP BY idProposal ORDER BY ${req.params.tri}` + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC");
+		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND p.proposalTitle like '%${req.query.q}%' GROUP BY idProposal ORDER BY ${req.params.tri}` + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC");
     con.query(request, function (err, result, fields) {
       if (err) throw err;
     json = JSON.stringify(result);
