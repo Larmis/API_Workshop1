@@ -20,16 +20,14 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 
-app.all('/*', function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With");
-  next();
-});
-
-// défini le port d'écoute
-app.listen(8080, function () {
-  console.log('Example app listening on port 80!')
+app.all ("/*", (req, res, next)=>{
+console.log(req.body)
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	next()
 })
+
+
 
 // route permettant l'authentification
 app.get('/user', function (req, res) {
@@ -42,26 +40,13 @@ app.get('/user', function (req, res) {
 })
 
 // toute permettant de récupérer tous les clients
-app.get('/customers', function (req, res) {
+app.get('/customers/:tri', function (req, res) {
 	var json = '';
-  con.query("SELECT * FROM customer", function (err, result, fields) {
+  con.query("SELECT * FROM customer ORDER BY "+req.params.tri, function (err, result, fields) {
     if (err) throw err;
 	json = JSON.stringify(result);
 	res.send(json);
   });
-})
-
-// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié par date
-app.get('/getProposals/:id/:tri', function (req, res) {
-  var json = '';
-  if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
-    res.send(json);
-  }else
-    con.query("SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= " + req.params.id + " AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps ORDER BY " + req.params.tri + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC"), function (err, result, fields) {
-      if (err) throw err;
-    json = JSON.stringify(result);
-    res.send(json);
-    });
 })
 
 // route permettant d'obtenir toutes les demandes d'un client à partir de son siret
@@ -80,6 +65,7 @@ app.post('/addProposal', function (req, res) {
   request = request + `'${req.body.idSalesPerson}', '${req.body.idDirOps}', '${req.body.idCustomer}', '${req.body.proposalDate}', '${req.body.interlocutorLastName}', '${req.body.interlocutorFirstName}'`;
   request = request + `, '${req.body.interlocutorMail}', '${req.body.interlocutorPhone}', '${req.body.proposalTitle}', '${req.body.description}', '${req.body.keySuccess}', '${req.body.beginning}', '${req.body.location}'`;
   request = request + `, '${req.body.status}', '${req.body.price}')`;
+	console.log(request);
   con.query(request, function (err, result, fields) {
     if (err) throw err;
 	res.send("true");
@@ -96,15 +82,43 @@ app.post('/updateProposal', function (req, res) {
   });
 })
 
+// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié par date
+app.get('/getProposals/:id/:tri', function (req, res) {
+  var json = '';
+  if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
+    res.send(json);
+  }else
+    con.query("SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= "
+		+ req.params.id + " AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps ORDER BY "
+		+ req.params.tri + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC"), function (err, result, fields) {
+      if (err) throw err;
+    json = JSON.stringify(result);
+    res.send(json);
+    });
+})
 
-// route permettant d'obtenir toutes les demandes d'un client à partir de son siret
+// route permettant de rechercher les lignes en fonction de la company du cstomer et du titre du proposal
 app.get('/research/:word', function (req, res) {
 	var json = '';
-  con.query(`SELECT * FROM customer c, proposal p WHERE c.company like '%`+req.params.word+`%' OR p.proposalTitle like '%`+req.params.word+`%'`, function (err, result, fields) {
+  con.query(`SELECT c.company, d.directorMail, p.* FROM customer c, proposal p, operationsdirector d WHERE c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%`+req.params.word+`%' OR p.proposalTitle like '%`+req.params.word+`%'`, function (err, result, fields) {
     if (err) throw err;
 	json = JSON.stringify(result);
 	res.send(json);
   });
+})
+
+// route permettant d'obtenir toutes les demandes d'un commercial à partir de son id, le résultat est trié par date
+app.get('/getProposal/:id/:tri?', function (req, res) {
+  var json = '';
+  if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
+    res.send(json);
+  }else
+		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' OR p.proposalTitle like '%${req.query.q}%' GROUP BY p.idProposal`
+    con.query(request, function (err, result, fields) {
+      if (err) throw err;
+    json = JSON.stringify(result);
+    res.send(json);
+    });
 })
 
 // // test d'ajout dans une table
@@ -116,3 +130,10 @@ app.get('/research/:word', function (req, res) {
 //   res.send(json);
 //   });
 // })
+
+
+
+// défini le port d'écoute
+app.listen(8080, function () {
+  console.log('Example app listening on port 8080!')
+})
