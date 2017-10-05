@@ -12,12 +12,11 @@ var con = mysql.createConnection({
 
 con.connect(function(err) {
 	if (err) throw err
-
 });
 
 app.use('/', express.static('public'));
-app.use( bodyParser.json() );       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+app.use( bodyParser.json() );
+app.use(bodyParser.urlencoded({
   extended: true
 }));
 
@@ -27,8 +26,6 @@ console.log(req.body)
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 	next()
 })
-
-
 
 // route permettant l'authentification
 app.get('/user', function (req, res) {
@@ -62,10 +59,10 @@ app.get('/getCustomerProposal/:siret', function (req, res) {
 
 // route permettant d’ajouter une demande
 app.post('/addProposal', function (req, res) {
-  var request = `INSERT INTO proposal (idSalesPerson, idDirOps, idCustomer, proposalDate, interlocutorLastName, interlocutorFirstName, interlocutorMail, interlocutorPhone, proposalTitle, description, keySuccess, beginning, location, status, price) VALUES (`;
+  var request = `INSERT INTO proposal (idSalesPerson, idDirOps, idCustomer, proposalDate, interlocutorLastName, interlocutorFirstName, interlocutorMail, interlocutorPhone, proposalTitle, description, keySuccess, beginning, ending, location, status, price) VALUES (`;
   request = request + `'${req.body.idSalesPerson}', '${req.body.idDirOps}', '${req.body.idCustomer}', '${req.body.proposalDate}', '${req.body.interlocutorLastName}', '${req.body.interlocutorFirstName}'`;
-  request = request + `, '${req.body.interlocutorMail}', '${req.body.interlocutorPhone}', '${req.body.proposalTitle}', '${req.body.description}', '${req.body.keySuccess}', '${req.body.beginning}', '${req.body.location}'`;
-  request = request + `, '${req.body.status}', '${req.body.price}')`;
+  request = request + `, '${req.body.interlocutorMail}', '${req.body.interlocutorPhone}', '${req.body.proposalTitle}', '${req.body.description}', '${req.body.keySuccess}', '${req.body.beginning}', '${req.body.ending}'`;
+  request = request + `, '${req.body.location}', '${req.body.status}', '${req.body.price}')`;
 	console.log(request);
   con.query(request, function (err, result, fields) {
     if (err) throw err;
@@ -76,7 +73,7 @@ app.post('/addProposal', function (req, res) {
 // route permettant de modifier une demande une demande
 app.post('/updateProposal', function (req, res) {
   var request = `UPDATE proposal SET idSalesPerson='${req.body.idSalesPerson}', idDirOps='${req.body.idDirOps}', idCustomer='${req.body.idCustomer}', proposalDate='${req.body.proposalDate}', interlocutorLastName='${req.body.interlocutorLastName}', interlocutorFirstName='${req.body.interlocutorFirstName}', interlocutorMail='${req.body.interlocutorMail}', interlocutorPhone='${req.body.interlocutorPhone}', proposalTitle='${req.body.proposalTitle}', description='${req.body.description}', keySuccess='${req.body.keySuccess}',`;
-	request = request +` beginning='${req.body.beginning}', location='${req.body.location}', status='${req.body.status}', price='${req.body.price}' WHERE idProposal=${req.body.idProposal}`;
+	request = request +` beginning='${req.body.beginning}', ending='${req.body.ending}', location='${req.body.location}', status='${req.body.status}', price='${req.body.price}' WHERE idProposal=${req.body.idProposal}`;
   con.query(request, function (err, result, fields) {
     if (err) throw err;
 	res.send("true");
@@ -113,26 +110,15 @@ app.get('/getProposal/:id/:tri?', function (req, res) {
   var json = '';
   if(req.params.tri!="beginning" && req.params.tri!="proposalTitle" && req.params.tri!="company" && req.params.tri!="status"){
     res.send(json);
-  }else
-		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' OR p.proposalTitle like '%${req.query.q}%' GROUP BY p.idProposal`
+  }else {
+		var request = `SELECT c.company, d.directorMail, p.* FROM proposal p, customer c, operationsdirector d WHERE p.idSalesPerson= ${req.params.id} AND c.siret=p.idCustomer AND d.idOperationsDirector=p.idDirOps AND c.company like '%${req.query.q}%' OR p.proposalTitle like '%${req.query.q}%' GROUP BY idProposal ORDER BY ${req.params.tri}` + ((req.params.tri==="status" || req.params.tri==="beginning") ? " DESC" : " ASC");
     con.query(request, function (err, result, fields) {
       if (err) throw err;
     json = JSON.stringify(result);
     res.send(json);
     });
+	}
 })
-
-// // test d'ajout dans une table
-// app.post('/addTest', function (req, res) {
-//   var json = req.body.test;
-//   con.query(`INSERT INTO tester (az) VALUES ('${req.body.test}')`, function (err, result, fields) {
-//     if (err) console.log(err);
-//   json = JSON.stringify(result);
-//   res.send(json);
-//   });
-// })
-
-
 
 // défini le port d'écoute
 app.listen(8080, function () {
